@@ -1,0 +1,52 @@
+blueprint:
+  name: Cast camera to TV for 30 s on door-bell press
+  description: >
+    Casts the chosen camera to a Cast/Chromecast/Google-TV device for
+    a short period when the door-bell (or any binary_sensor) turns on.
+  domain: automation
+  input:
+    bell_sensor:
+      name: Door-bell trigger
+      selector:
+        entity:
+          domain: binary_sensor
+    camera_entity:
+      name: Camera to cast
+      selector:
+        entity:
+          domain: camera
+    cast_target:
+      name: Google-Cast media_player
+      selector:
+        entity:
+          domain: media_player
+    keep_seconds:
+      name: Duration (seconds)
+      default: 30
+      selector:
+        number:
+          min: 5
+          max: 120
+          unit_of_measurement: s
+          mode: slider
+
+trigger:
+  - platform: state
+    entity_id: !input bell_sensor
+    to: 'on'
+
+action:
+  - service: camera.play_stream
+    target:
+      entity_id: !input camera_entity
+    data:
+      media_player: !input cast_target
+      format: hls
+
+  - delay: "{{ (inputs.keep_seconds | int) }}"
+
+  - service: media_player.media_stop
+    target:
+      entity_id: !input cast_target
+
+mode: single
